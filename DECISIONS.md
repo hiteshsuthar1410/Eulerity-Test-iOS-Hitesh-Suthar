@@ -84,3 +84,32 @@ Newest decisions are appended at the bottom.
   bytes regardless of source.
 - **Alternatives:** Read the bundle directly in the ViewModel (rejected — couples the
   core to the bundle and blocks the server migration the brief calls for).
+
+## D6 — Duplicate / missing `id`: first-wins, drop the rest
+
+- **Context:** `id` is the primary key of the whole engine — ViewModel state is
+  `[String: FieldValue]` keyed by it, the Save output is `[id: value]`, errors are
+  keyed by it, and SwiftUI uses it for row identity. It is server-supplied, so it can
+  be missing, empty, or duplicated. Unlike `order`/`max_length`, there is no graceful
+  partial degrade: two fields under one id collapse to one state slot (typing in one
+  mutates the other), the Save output silently loses a value (last-write-wins), and
+  `ForEach(id: \.id)` gets undefined row identity.
+- **Decision:** `id` stays an optional `String` at the DTO layer (decode never
+  enforces it). The `FieldFactory` (M2) enforces uniqueness over the field set in
+  source order:
+  1. Missing/empty `id` → drop the field + emit a diagnostic.
+  2. `id` duplicating an already-kept field → drop the *later* one (by source order)
+     + diagnostic; the **first occurrence wins**.
+  Because uniqueness is guaranteed before the ViewModel sees anything, `id` is then
+  provably safe as the `ForEach` identifier.
+- **Why:** `id` is the one property that cannot be lenient — a collision corrupts
+  state, output, and view identity, not just one field. First-wins keeps the mental
+  model identical to the D4 tie-break ("first in payload wins" everywhere). Uniqueness
+  is a *collection-level* rule, so it belongs in the factory pass, not in per-element
+  decode — reinforcing the boundary (decode = mechanical/per-element, factory =
+  semantic/cross-field).
+- **Alternatives:** De-dupe by suffixing ids (rejected — breaks the server key
+  contract; the Save payload keys must match what the server expects). Keep an
+  internal synthetic identity separate from the server id (rejected — the Save output
+  must still be keyed by server id, so two fields sharing one id are ambiguous at the
+  source regardless). Last-wins (rejected — inconsistent with D4).

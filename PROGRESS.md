@@ -6,7 +6,7 @@ Milestone tracker for the Server-Driven UI form engine. Logic milestones
 | Milestone | Status | Date | Notes |
 |-----------|--------|------|-------|
 | M0 — Foundation & hygiene | ✅ Done | 2026-06-18 | `.gitignore`, untracked `xcuserdata`, aligned all targets to iOS 16.0, stripped template, scaffolded docs |
-| M1 — Resilient decoding boundary | ⬜ Not started | — | DTOs, `FieldType` w/ `.unknown`, `FailableDecodable`, `sourceIndex`, `FormProvider` + bundle loader, parsing tests |
+| M1 — Resilient decoding boundary | ✅ Done | 2026-06-18 | DTOs, `FieldType`/`FieldSubtype` w/ `.unknown`, `FailableDecodable` + lenient helper, `FormParser`, `FormProvider` + bundle loader, `form.json` bundled. 15 parsing tests pass (incl. nil/duplicate-id decode preservation per D6) |
 | M2 — Domain mapping | ⬜ Not started | — | `FieldFactory`, drop rules + diagnostics, `order` sort, theme/hex resolution, malformed-payload tests |
 | M3 — ViewModel + validation + Save | ⬜ Not started | — | state dict, required/regex/max_length validation, Save prints k-v, headless tests |
 | M4 — Theme + Typography engines | ⬜ Not started | — | `FormTheme` styling, `Typography` (single font file), `FieldContainer` |
