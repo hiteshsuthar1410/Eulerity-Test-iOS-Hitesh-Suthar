@@ -113,3 +113,45 @@ Newest decisions are appended at the bottom.
   internal synthetic identity separate from the server id (rejected — the Save output
   must still be keyed by server id, so two fields sharing one id are ambiguous at the
   source regardless). Last-wins (rejected — inconsistent with D4).
+
+## D7 — Dropped-field diagnostics are surfaced via debugPrint
+
+- **Context:** When the factory (M2) drops a malformed/unknown field, that field
+  simply vanishes from the rendered form. Silent dropping makes a server-side payload
+  bug nearly impossible to notice during development.
+- **Decision:** The factory returns `[DroppedFieldDiagnostic]` alongside the
+  `[RenderableField]`, and the engine `debugPrint`s each diagnostic (id/index + reason)
+  in `DEBUG` builds. Diagnostics are part of the return value (not just a side effect),
+  so tests assert on them directly.
+- **Why:** A dropped field should be *loud* in development and *silent* in production:
+  `debugPrint` (gated to `#if DEBUG`) gives a visible breadcrumb while building/QA
+  without polluting release logs or the UI. Returning the diagnostics keeps the
+  factory pure and unit-testable.
+- **Alternatives:** Throw on a bad field (rejected — defeats graceful degradation).
+  Drop silently (rejected — the reason this decision exists). A full logging framework
+  (rejected — overkill for an offline single-screen engine; revisit if needed).
+
+## D8 — Default actor isolation: nonisolated project-wide; only the ViewModel @MainActor
+
+- **Context:** The project shipped with `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`
+  (Xcode's "approachable concurrency" default). That makes every type — including the
+  headless decode/DTO value types — `MainActor`-isolated, which clashes with
+  `Codable`'s `nonisolated init(from:)` and wrongly forces the parsing layer onto the
+  main thread.
+- **Decision:** Set `SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated` at the project level
+  (inherited by all targets; the app target also sets it explicitly). UI-thread
+  isolation is applied *narrowly and deliberately*: only `FormViewModel` will be
+  annotated `@MainActor` (M3). The decode/map/validate layers stay nonisolated.
+- **Why:** The parsing/mapping core is pure, synchronous, thread-agnostic logic; it
+  should not be main-actor-bound. Opting in to `@MainActor` only where UI state lives
+  is the correct, conventional MVVM boundary and removes the `Codable` conflict.
+- **Known side effect (see PROGRESS.md → Known issues):** Under `nonisolated` +
+  the `NonisolatedNonsendingByDefault` upcoming feature, the two `BundleFormProvider`
+  **async** tests hang when awaiting the nonisolated async `loadForm()` (the 13
+  synchronous parsing tests are unaffected). They are `XCTSkip`'d with `// FIXME:
+  [isolation-deadlock]` markers pending a fix (candidates: annotate the provider/test
+  isolation, or revisit the upcoming-feature flag).
+- **Alternatives:** Keep `MainActor` default and mark value types `nonisolated`
+  piecemeal (rejected — inverts the sensible default; every new DTO would need an
+  annotation). Disable approachable concurrency entirely (rejected — heavier hammer
+  than needed).
