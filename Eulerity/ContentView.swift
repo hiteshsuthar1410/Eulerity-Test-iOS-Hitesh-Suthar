@@ -7,15 +7,16 @@
 
 import SwiftUI
 
+/// Temporary root placeholder.
+///
+/// The Server-Driven UI form engine is built in milestones M1–M6 (decode →
+/// map → validate → save), all of which are headless and unit-tested before
+/// any view exists. This placeholder keeps the app target compiling until
+/// `FormScreen` replaces it in M7.
 struct ContentView: View {
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
-        }
-        .padding()
+        Text("Form engine — wiring up in M7")
+            .padding()
     }
 }
 
