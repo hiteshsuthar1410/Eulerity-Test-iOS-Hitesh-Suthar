@@ -38,3 +38,6 @@ Carthage/Build/
 # Fastlane / misc
 fastlane/report.xml
 fastlane/screenshots/**/*.png
+
+# Claude Code local settings
+.claude/settings.local.json
