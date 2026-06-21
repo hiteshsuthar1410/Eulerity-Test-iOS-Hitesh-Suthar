@@ -216,3 +216,68 @@ Newest decisions are appended at the bottom.
 - **Alternatives:** Parse straight into `Color` (rejected — drags SwiftUI into the
   logic layer and is hard to unit-test). Store raw hex strings and parse in the View
   (rejected — scatters validation across the UI, exactly what the boundary avoids).
+
+## D12 — `FieldValue` state model + seeding from defaults
+
+- **Context:** The ViewModel needs one uniform state container keyed by field id for
+  all kinds, and sensible initial values.
+- **Decision:** `FieldValue` is `.text(String)` / `.selection(Set<String>)` /
+  `.bool(Bool)`, held in `[String: FieldValue]`. On `apply`, each field is seeded:
+  text → `""`, dropdown → its validated `defaultSelection`, toggle/checkbox →
+  `defaultOn`. Dropdown state stores option **ids**; labels are render-only.
+- **Why:** A small closed enum keeps the engine uniform and `Equatable` (easy
+  testing); seeding from the already-validated `RenderableField` means initial state
+  is correct by construction (e.g. defaults that referenced unknown options were
+  already filtered in M2).
+- **Alternatives:** `Any`/type-erased values (rejected — loses type safety and
+  Equatable). Per-kind separate dictionaries (rejected — fragments the source of truth).
+
+## D13 — Validation: on Save, required → numeric → regex, clear-on-edit
+
+- **Context:** The brief: errors surface on Save, counters are live. Need a rule order
+  and an error lifecycle.
+- **Decision:** `FieldValidator` is pure/headless. Rules run **on `save()`**:
+  required → numeric (NUMBER only, D15) → regex; first failure's message wins
+  (`field.errorMessage ?? default`). `max_length` is **not** a validation rule — it is
+  enforced as a hard typing limit (truncation) in `setText`, so it can't be violated.
+  Editing a field **clears its error**; a full re-validation only re-runs on the next
+  Save. An uncompilable regex is skipped (never blocks the user).
+- **Why:** Matches the brief's "errors on Save / live counters"; clear-on-edit is
+  standard, forgiving UX; making `max_length` a Save error would be unreachable since
+  the value is truncated at input.
+- **Alternatives:** Validate on every keystroke (rejected — noisy, not the brief).
+  Keep errors until next Save (rejected — feels broken while the user is fixing them).
+
+## D14 — Sync `apply`/`save` seam; `@MainActor` only on the ViewModel
+
+- **Context:** `FormViewModel` is `@MainActor` (UI state). Its async `load()` awaits
+  the nonisolated async `loadForm()` — the exact shape that deadlocks XCTest async
+  tests (`isolation-deadlock`, D8). We still need the core fully unit-tested.
+- **Decision:** Split loading: `load() async` (thin runtime wrapper) calls the
+  provider then delegates to **`apply(_ schema:)` — synchronous**. Tests are
+  `@MainActor` classes that drive `apply` + `save` synchronously, so no `await`
+  crosses an isolation boundary and the deadlock is sidestepped. `@MainActor` is
+  applied *only* to `FormViewModel`, per D8.
+- **Why:** Keeps the tested core independent of the unresolved async issue; isolates
+  the risky async path to one thin, runtime-only method to verify in M7.
+- **Alternatives:** Make the whole VM async-tested (rejected — would hit the deadlock).
+  Load synchronously from the bundle (rejected — breaks the network-ready D5 seam).
+
+## D15 — NUMBER serializes as a raw string; Save payload is scalars + arrays
+
+- **Context (your call):** How should NUMBER fields appear in the Save payload, and
+  what is the payload's exact shape?
+- **Decision:** Keep NUMBER as `.text(String)` in state (uniform engine) and add a
+  light numeric validation rule — *if non-empty, it must parse as a finite number*
+  (cheap defense against pasted junk like `"50abc"` that the numeric keypad can't
+  stop). In the Save payload, emit the **raw string** (`"50"`, not `50`). Overall
+  payload shape: **scalars for single values** (text/number → string, toggle/checkbox
+  → bool, single-select dropdown → the id string) and **arrays for multi-select
+  dropdowns** (ids in option-declaration order). Serialized via `JSONSerialization`.
+- **Why:** Partial/empty numeric input has no clean numeric form, and conceptually the
+  engine treats all text input as strings for the **server** to coerce. The numeric
+  rule still blocks obvious garbage without forcing a lossy type conversion.
+- **Alternatives:** Force NUMBER to a `Double` in the output (**rejected** — partial or
+  empty input (`""`, `"-"`, `"3."`) has no clean numeric representation, and it would
+  break the engine's "all input is string, server coerces" model). Always emit
+  single-select as a 1-element array (rejected — doesn't match the spec's scalar shape).

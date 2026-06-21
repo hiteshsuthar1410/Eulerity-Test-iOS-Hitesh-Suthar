@@ -8,7 +8,7 @@ Milestone tracker for the Server-Driven UI form engine. Logic milestones
 | M0 — Foundation & hygiene | ✅ Done | 2026-06-18 | `.gitignore`, untracked `xcuserdata`, aligned all targets to iOS 16.0, stripped template, scaffolded docs |
 | M1 — Resilient decoding boundary | ✅ Done | 2026-06-18 | DTOs, `FieldType`/`FieldSubtype` w/ `.unknown`, `FailableDecodable` + lenient helper, `FormParser`, `FormProvider` + bundle loader, `form.json` bundled. 15 parsing tests pass (incl. nil/duplicate-id decode preservation per D6) |
 | M2 — Domain mapping | ✅ Done | 2026-06-19 | `FieldFactory` (DTO→`RenderableField`, D6 dedup, D10 drop/degrade, D4 sort), `FieldDiagnostic` + DEBUG `debugPrint` (D7), headless `RGBAColor`/`ResolvedTheme` per-channel fallback. 22 new tests; 35 pass / 2 skip |
-| M3 — ViewModel + validation + Save | ⬜ Not started | — | state dict, required/regex/max_length validation, Save prints k-v, headless tests |
+| M3 — ViewModel + validation + Save | ✅ Done | 2026-06-19 | `FieldValue` + seeding (D12), `FieldValidator` required/numeric/regex (D13/D15), `FormViewModel` `@MainActor` w/ sync `apply`/`save` seam (D14), Save emits scalars/arrays + raw-string NUMBER (D15). 25 new tests; 58 pass / 2 skip |
 | M4 — Theme + Typography engines | ⬜ Not started | — | `FormTheme` styling, `Typography` (single font file), `FieldContainer` |
 | M5 — Reusable field components | ⬜ Not started | — | Text (+5 subtypes, counter), Dropdown (single+multi), Toggle, Checkbox + previews |
 | M6 — Rich-text checkbox labels | ⬜ Not started | — | metadata → tappable → Safari, `clickable_text_color` |
