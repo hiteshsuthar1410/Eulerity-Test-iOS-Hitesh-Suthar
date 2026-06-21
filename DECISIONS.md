@@ -217,11 +217,17 @@ Newest decisions are appended at the bottom.
   SwiftUI `Color`. But `Color` needs a UI context and isn't cleanly unit-testable for
   channel values, and the brief wants bad hex to degrade gracefully.
 - **Decision:** Parse hex into `RGBAColor` (channels in `0...1`, **no** `import
-  SwiftUI`) with a failable `init?(hex:)`. `ResolvedTheme.resolve(_:)` applies
-  per-channel fallback to defaults. M4 wraps `RGBAColor` into a SwiftUI `Color`.
+  SwiftUI`) with a failable `init?(hex:)`. `ResolvedTheme.resolve(_:)` validates each
+  channel. M4 wraps `RGBAColor` into a SwiftUI `Color`.
 - **Why:** Keeps all hex parsing/validation in the testable headless core (one bad
   channel can't break the palette, and we can assert exact channel values in XCTest).
   The SwiftUI dependency is pushed to the thin presentation edge.
+- **Amended (2026-06-21, M4):** `ResolvedTheme` originally filled missing channels
+  with **fixed light defaults**. M4's appearance requirement (D17) needs *adaptive*
+  fallback, which requires knowing *which* channels the server actually sent — fixed
+  fill erased that. So `ResolvedTheme` now holds **optional** channels (`nil` =
+  absent/invalid) and the fallback choice is deferred to `FormPalette` (D17). This
+  supersedes the fixed-fallback part of D11; the headless/testable parsing stays.
 - **Alternatives:** Parse straight into `Color` (rejected — drags SwiftUI into the
   logic layer and is hard to unit-test). Store raw hex strings and parse in the View
   (rejected — scatters validation across the UI, exactly what the boundary avoids).
@@ -294,3 +300,59 @@ Newest decisions are appended at the bottom.
   empty input (`""`, `"-"`, `"3."`) has no clean numeric representation, and it would
   break the engine's "all input is string, server coerces" model). Always emit
   single-select as a 1-element array (rejected — doesn't match the spec's scalar shape).
+
+## D16 — Single typography engine of semantic roles
+
+- **Context:** The brief wants a font styling engine in one file so font changes are
+  atomic, and HIG wants Dynamic Type support.
+- **Decision:** `Typography` is one enum of *semantic roles* (`.formTitle`,
+  `.fieldLabel`, `.input`, `.supporting`, `.error`, `.counter`, `.button`), each a
+  `Font` built from a Dynamic Type text style (`.system(.body)` etc.) so it scales
+  with the user's accessibility text size. Views reference roles, never raw sizes.
+- **Why:** One file = atomic, defensible font changes (swap a family / bump weights in
+  one place). Semantic roles (not a generic `font(size:weight:)` passthrough) keep call
+  sites intent-revealing and consistent. Text-style basis gives Dynamic Type for free.
+- **Alternatives:** Per-view inline `.font(.system(size:))` (rejected — scatters font
+  decisions, the opposite of the requirement). Fixed point sizes (rejected — breaks
+  Dynamic Type / accessibility).
+
+## D17 — Server colors verbatim; adaptive fallback only when a channel is absent
+
+- **Context:** SDUI theming and Dark/Light support pull against each other: the server
+  sends fixed hex (`background #FFFFFF`), which doesn't adapt to dark mode on its own.
+  The brief requires *both* a theme-driven palette *and* appearance compliance.
+- **Decision:** `FormPalette` resolves this in one place:
+  - **Channel present →** use the server hex **verbatim**. A coherent server palette is
+    internally legible in either system appearance; the backend owns the branded surface.
+  - **Channel absent/invalid →** fall back to the **adaptive** system color
+    (`Color(uiColor: .systemBackground)`, `.label`, `.separator`, `.systemRed`).
+  Additionally, the **app chrome around the form surface is adaptive** (page background
+  / safe areas follow system appearance), so the themed form reads as an intentional
+  branded card while the app still demonstrates real Dark/Light compliance. Distributed
+  via `@Environment(\.formPalette)`.
+- **Why (the SDUI-vs-appearance tension, explicitly):** In server-driven UI the backend
+  is the source of truth for look; silently re-tinting its colors for dark mode would
+  override deliberate brand choices. But a form with *no* theme must still respect the
+  OS. Honoring present colors verbatim while making *absent* channels (and the
+  surrounding chrome) adaptive satisfies both: branded where the server speaks, native
+  where it doesn't. Verified in the simulator — Light shows a light page + white card;
+  Dark shows a black page + the same white branded card.
+- **Alternatives:** Always force adaptivity (rejected — overrides explicit server brand
+  colors). Honor server colors but make the whole screen non-adaptive (rejected — a
+  theme-less form would ignore dark mode, failing the brief). Ship dark variants in the
+  schema (rejected — not in the contract; can be added later without changing this seam).
+
+## D18 — `FieldContainer` owns shared field chrome
+
+- **Context:** Every field kind needs the same surrounding chrome: label (+ required
+  marker), supporting text, error message, and a live character counter. Duplicating
+  that per component would drift.
+- **Decision:** `FieldContainer` is a generic wrapper taking the `RenderableField`
+  header, an optional `error`, an optional `characterCount`, and a `@ViewBuilder`
+  content slot. It renders the label with a required `*` (in `palette.error`), then a
+  footer showing **error (precedence) or supporting text**, with the counter
+  right-aligned when the field has `max_length` (turning `palette.error` at the limit).
+- **Why:** One source of truth for field chrome → every component (M5) gets consistent,
+  HIG-aligned layout and theming for free; only the interactive control differs.
+- **Alternatives:** Chrome per component (rejected — duplication, drift). A bag of
+  view modifiers (rejected — less discoverable, harder to keep layout consistent).

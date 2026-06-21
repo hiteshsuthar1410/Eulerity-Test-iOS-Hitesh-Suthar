@@ -2,41 +2,42 @@
 //  ResolvedTheme.swift
 //  Eulerity
 //
-//  The theme after validation, with every channel guaranteed present.
+//  The server theme after hex validation — as optional channels.
 //
 
 import Foundation
 
-/// A fully-resolved palette. Built from a possibly-`nil`, possibly-partially-bad
-/// `ThemeDTO` with **per-channel** fallback to defaults, so one malformed hex can
-/// never break the whole theme (D11). UI-framework-free; M4 maps each channel to a
-/// SwiftUI `Color`.
+/// The server theme after hex validation, as **optional** channels: a channel is
+/// `nil` when the server omitted it or sent malformed hex.
+///
+/// The fallback decision is deliberately deferred to the UI layer (`FormPalette`),
+/// which substitutes adaptive system colors for nil channels so a theme-less form
+/// follows Light/Dark (D17, superseding D11's fixed fallback). Headless (no SwiftUI)
+/// so resolution stays unit-testable.
 struct ResolvedTheme: Equatable {
-    let background: RGBAColor
-    let text: RGBAColor
-    let border: RGBAColor
-    let error: RGBAColor
+    let background: RGBAColor?
+    let text: RGBAColor?
+    let border: RGBAColor?
+    let error: RGBAColor?
 
-    /// Light-mode defaults (mirror the sample payload's palette).
-    static let `default` = ResolvedTheme(
-        background: RGBAColor(hex: "#FFFFFF")!,
-        text: RGBAColor(hex: "#111827")!,
-        border: RGBAColor(hex: "#D1D5DB")!,
-        error: RGBAColor(hex: "#B91C1C")!
-    )
+    init(background: RGBAColor? = nil,
+         text: RGBAColor? = nil,
+         border: RGBAColor? = nil,
+         error: RGBAColor? = nil) {
+        self.background = background
+        self.text = text
+        self.border = border
+        self.error = error
+    }
 
-    /// Resolves a DTO into a complete theme. Each channel independently falls back
-    /// to its default when the hex is missing or malformed.
+    /// Validates each channel independently: present, well-formed hex → an `RGBAColor`;
+    /// absent or malformed → `nil`. One bad channel never affects the others.
     static func resolve(_ dto: ThemeDTO?) -> ResolvedTheme {
-        func channel(_ hex: String?, _ fallback: RGBAColor) -> RGBAColor {
-            guard let hex, let color = RGBAColor(hex: hex) else { return fallback }
-            return color
-        }
-        return ResolvedTheme(
-            background: channel(dto?.backgroundColor, `default`.background),
-            text: channel(dto?.textColor, `default`.text),
-            border: channel(dto?.borderColor, `default`.border),
-            error: channel(dto?.errorColor, `default`.error)
+        ResolvedTheme(
+            background: dto?.backgroundColor.flatMap { RGBAColor(hex: $0) },
+            text: dto?.textColor.flatMap { RGBAColor(hex: $0) },
+            border: dto?.borderColor.flatMap { RGBAColor(hex: $0) },
+            error: dto?.errorColor.flatMap { RGBAColor(hex: $0) }
         )
     }
 }

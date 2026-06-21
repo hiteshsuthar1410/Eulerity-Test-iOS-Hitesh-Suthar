@@ -16,7 +16,7 @@ import SwiftUI
 final class FormViewModel: ObservableObject {
     @Published private(set) var title: String?
     @Published private(set) var fields: [RenderableField] = []
-    @Published private(set) var theme: ResolvedTheme = .default
+    @Published private(set) var theme: ResolvedTheme = ResolvedTheme()
     @Published private(set) var values: [String: FieldValue] = [:]
     @Published private(set) var errors: [String: String] = [:]
     private(set) var diagnostics: [FieldDiagnostic] = []
@@ -66,7 +66,7 @@ final class FormViewModel: ObservableObject {
 
     private func reset() {
         title = nil
-        theme = .default
+        theme = ResolvedTheme()
         fields = []
         diagnostics = []
         values = [:]

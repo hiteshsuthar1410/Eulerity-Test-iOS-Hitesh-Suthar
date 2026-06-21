@@ -6,6 +6,7 @@
 //
 
 import XCTest
+import SwiftUI
 @testable import Eulerity
 
 final class ThemeResolutionTests: XCTestCase {
@@ -46,10 +47,10 @@ final class ThemeResolutionTests: XCTestCase {
         XCTAssertNil(RGBAColor(hex: "not a color"))
     }
 
-    // MARK: - ResolvedTheme
+    // MARK: - ResolvedTheme (optional channels)
 
-    func testNilDTOResolvesToDefault() {
-        XCTAssertEqual(ResolvedTheme.resolve(nil), .default)
+    func testNilDTOResolvesToAllNilChannels() {
+        XCTAssertEqual(ResolvedTheme.resolve(nil), ResolvedTheme())
     }
 
     func testValidDTOResolvesAllChannels() throws {
@@ -61,8 +62,8 @@ final class ThemeResolutionTests: XCTestCase {
         XCTAssertEqual(theme.error, RGBAColor(hex: "#B91C1C"))
     }
 
-    func testBadHexFallsBackPerChannelOnly() throws {
-        // Only `text_color` is malformed — the other channels must still parse.
+    func testBadHexChannelBecomesNilOthersUnaffected() throws {
+        // Only `text_color` is malformed — it resolves to nil; the rest still parse.
         let json = """
         { "theme": {
             "background_color": "#000000",
@@ -74,8 +75,33 @@ final class ThemeResolutionTests: XCTestCase {
         let schema = try FormParser.parse(Data(json.utf8)).get()
         let theme = ResolvedTheme.resolve(schema.theme)
 
-        XCTAssertEqual(theme.text, ResolvedTheme.default.text, "Bad channel falls back")
+        XCTAssertNil(theme.text, "Bad channel becomes nil (UI applies adaptive fallback)")
         XCTAssertEqual(theme.background, RGBAColor(hex: "#000000"), "Good channels unaffected")
         XCTAssertEqual(theme.border, RGBAColor(hex: "#D1D5DB"))
+    }
+
+    // MARK: - FormPalette (D17: verbatim server colors, adaptive fallback when absent)
+
+    func testPaletteUsesServerColorsVerbatim() throws {
+        let schema = try FormParser.parse(Data(Fixtures.fullSample.utf8)).get()
+        let palette = FormPalette(ResolvedTheme.resolve(schema.theme))
+        XCTAssertEqual(palette.background, Color(RGBAColor(hex: "#FFFFFF")!))
+        XCTAssertEqual(palette.error, Color(RGBAColor(hex: "#B91C1C")!))
+    }
+
+    func testPaletteFallsBackToAdaptiveForMissingChannels() throws {
+        let json = ##"{ "theme": { "background_color": "#000000" }, "fields": [] }"##
+        let schema = try FormParser.parse(Data(json.utf8)).get()
+        let palette = FormPalette(ResolvedTheme.resolve(schema.theme))
+        XCTAssertEqual(palette.background, Color(RGBAColor(hex: "#000000")!), "present → verbatim")
+        XCTAssertEqual(palette.text, FormPalette.adaptive.text, "absent → adaptive")
+        XCTAssertEqual(palette.border, FormPalette.adaptive.border)
+    }
+
+    func testNilThemeIsFullyAdaptive() {
+        let palette = FormPalette(ResolvedTheme())
+        XCTAssertEqual(palette.background, FormPalette.adaptive.background)
+        XCTAssertEqual(palette.text, FormPalette.adaptive.text)
+        XCTAssertEqual(palette.error, FormPalette.adaptive.error)
     }
 }

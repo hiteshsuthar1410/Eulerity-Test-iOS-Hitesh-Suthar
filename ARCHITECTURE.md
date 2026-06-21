@@ -58,11 +58,12 @@ as the first file in each lands.
 | Loader | `FormProvider.swift`, `BundleFormProvider.swift` | M1 ✅ |
 | DTO / decode | `FormSchemaDTO.swift`, `FieldDTO.swift`, `OptionDTO.swift`, `ThemeDTO.swift`, `FieldType.swift`, `FailableDecodable.swift`, `FormParser.swift` | M1 ✅ |
 | Domain / mapping | `RenderableField.swift`, `FieldFactory.swift`, `FieldDiagnostic.swift` | M2 ✅ |
-| Theme resolution | `RGBAColor.swift`, `ResolvedTheme.swift` (headless) → SwiftUI `Color` wrapper | M2 ✅ (logic) / M4 (styling) |
+| Theme resolution | `RGBAColor.swift`, `ResolvedTheme.swift` (headless, optional channels) | M2 ✅ |
+| Theme + fonts (UI) | `Typography.swift` (font engine), `FormPalette.swift` (`Color` bridge + Environment, D17) | M4 ✅ |
 | Validation | `FieldValidator.swift` (required, numeric, regex) | M3 ✅ |
 | ViewModel | `FormViewModel.swift`, `FieldValue.swift` (+ `FormOutputValue`/`SaveResult`) | M3 ✅ |
 | Typography | `Typography.swift` (single font engine) | M4 |
-| Components | `FieldContainer.swift`, `FormTextField.swift`, `FormDropdownField.swift`, `FormToggleField.swift`, `FormCheckboxField.swift`, `RichTextLabel.swift` | M4–M6 |
+| Components | `FieldContainer.swift` (M4 ✅), `FormTextField.swift`, `FormDropdownField.swift`, `FormToggleField.swift`, `FormCheckboxField.swift`, `RichTextLabel.swift` | M4–M6 |
 | Screen | `FormScreen.swift` (replaces `ContentView`) | M7 |
 
 ## State model

@@ -9,7 +9,7 @@ Milestone tracker for the Server-Driven UI form engine. Logic milestones
 | M1 — Resilient decoding boundary | ✅ Done | 2026-06-18 | DTOs, `FieldType`/`FieldSubtype` w/ `.unknown`, `FailableDecodable` + lenient helper, `FormParser`, `FormProvider` + bundle loader, `form.json` bundled. 15 parsing tests pass (incl. nil/duplicate-id decode preservation per D6) |
 | M2 — Domain mapping | ✅ Done | 2026-06-19 | `FieldFactory` (DTO→`RenderableField`, D6 dedup, D10 drop/degrade, D4 sort), `FieldDiagnostic` + DEBUG `debugPrint` (D7), headless `RGBAColor`/`ResolvedTheme` per-channel fallback. 22 new tests; 35 pass / 2 skip |
 | M3 — ViewModel + validation + Save | ✅ Done | 2026-06-19 | `FieldValue` + seeding (D12), `FieldValidator` required/numeric/regex (D13/D15), `FormViewModel` `@MainActor` w/ sync `apply`/`save` seam (D14), Save emits scalars/arrays + raw-string NUMBER (D15). 25 new tests; 58 pass / 2 skip |
-| M4 — Theme + Typography engines | ⬜ Not started | — | `FormTheme` styling, `Typography` (single font file), `FieldContainer` |
+| M4 — Theme + Typography engines | ✅ Done | 2026-06-21 | `Typography` semantic-role font engine (D16), `FormPalette` verbatim/adaptive resolver + Environment (D17), `ResolvedTheme` → optional channels (D11 amended), `FieldContainer` chrome (D18). Dark/Light verified in simulator. 64 tests pass |
 | M5 — Reusable field components | ⬜ Not started | — | Text (+5 subtypes, counter), Dropdown (single+multi), Toggle, Checkbox + previews |
 | M6 — Rich-text checkbox labels | ⬜ Not started | — | metadata → tappable → Safari, `clickable_text_color` |
 | M7 — Wire-up & polish | ⬜ Not started | — | `FormScreen`, Dark/Light + HIG pass, resilience hardening tests |
