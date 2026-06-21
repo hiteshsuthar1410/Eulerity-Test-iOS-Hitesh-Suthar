@@ -20,7 +20,7 @@ flowchart TD
         C -->|"Net 1: FailableDecodable\nper-element try?"| C
         C -->|"Net 2: FieldType.unknown\n(no throw on unknown type)"| C
         C --> D["FieldFactory\n(semantic validation,\nnon-throwing)"]
-        D --> E["[RenderableField]\n+ [DroppedFieldDiagnostic]"]
+        D --> E["[RenderableField]\n+ [FieldDiagnostic]"]
     end
 
     E --> F["FormViewModel\n(ObservableObject)\nstate: [fieldID: FieldValue]\nerrors, theme, save()"]
@@ -46,7 +46,7 @@ the form. See **DECISIONS.md → D3** for the full rationale.
 semantics: unknown type → drop; `DROPDOWN` with missing/empty `options` → drop;
 conflicting constraints (`max_length <= 0`, `default_values` referencing a
 non-existent option id) → resolve or drop; bad hex → per-channel fallback. Output is
-`[RenderableField]` the ViewModel can fully trust, plus `[DroppedFieldDiagnostic]`.
+`[RenderableField]` the ViewModel can fully trust, plus `[FieldDiagnostic]`.
 
 ## Module notes (planned layout)
 
@@ -55,10 +55,10 @@ as the first file in each lands.
 
 | Area | Files | Milestone |
 |------|-------|-----------|
-| Loader | `FormProvider.swift`, `BundleFormProvider.swift` | M1 |
-| DTO / decode | `FormSchemaDTO.swift`, `FieldDTO.swift`, `FieldType.swift`, `FailableDecodable.swift` | M1 |
-| Domain / mapping | `RenderableField.swift`, `FieldFactory.swift`, `DroppedFieldDiagnostic.swift` | M2 |
-| Theme resolution | `FormTheme.swift`, `Color+Hex.swift` | M2 (logic) / M4 (styling) |
+| Loader | `FormProvider.swift`, `BundleFormProvider.swift` | M1 ✅ |
+| DTO / decode | `FormSchemaDTO.swift`, `FieldDTO.swift`, `OptionDTO.swift`, `ThemeDTO.swift`, `FieldType.swift`, `FailableDecodable.swift`, `FormParser.swift` | M1 ✅ |
+| Domain / mapping | `RenderableField.swift`, `FieldFactory.swift`, `FieldDiagnostic.swift` | M2 ✅ |
+| Theme resolution | `RGBAColor.swift`, `ResolvedTheme.swift` (headless) → SwiftUI `Color` wrapper | M2 ✅ (logic) / M4 (styling) |
 | Validation | `FieldValidator.swift` (required, regex, max_length) | M3 |
 | ViewModel | `FormViewModel.swift`, `FieldValue.swift` | M3 |
 | Typography | `Typography.swift` (single font engine) | M4 |

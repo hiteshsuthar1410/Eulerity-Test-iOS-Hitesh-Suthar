@@ -119,7 +119,7 @@ Newest decisions are appended at the bottom.
 - **Context:** When the factory (M2) drops a malformed/unknown field, that field
   simply vanishes from the rendered form. Silent dropping makes a server-side payload
   bug nearly impossible to notice during development.
-- **Decision:** The factory returns `[DroppedFieldDiagnostic]` alongside the
+- **Decision:** The factory returns `[FieldDiagnostic]` alongside the
   `[RenderableField]`, and the engine `debugPrint`s each diagnostic (id/index + reason)
   in `DEBUG` builds. Diagnostics are part of the return value (not just a side effect),
   so tests assert on them directly.
@@ -155,3 +155,64 @@ Newest decisions are appended at the bottom.
   piecemeal (rejected — inverts the sensible default; every new DTO would need an
   annotation). Disable approachable concurrency entirely (rejected — heavier hammer
   than needed).
+
+## D9 — `RenderableField`: common header + `Kind` enum
+
+- **Context:** The View must switch on a field's kind to pick a component, and the
+  ViewModel must key state / sort regardless of kind. A single struct with every
+  property optional would let the View read `options` off a toggle or `allowMultiple`
+  off a checkbox — illegal states that compile.
+- **Decision:** `RenderableField` is a struct with a uniform header (`id`, `order`,
+  `sourceIndex`, `label`, `isRequired`, `supportingText`, `errorMessage`) plus a
+  `kind: Kind` enum whose cases each carry a kind-specific payload type
+  (`Text`/`Dropdown`/`Toggle`/`Checkbox`) holding only that kind's data.
+- **Why:** Uniform header → the ViewModel sorts and keys state without switching.
+  Per-kind payloads → illegal states are unrepresentable; the View destructures one
+  case and gets exactly the fields it needs. Each payload also documents its
+  post-mapping invariants (e.g. `Dropdown.options` is non-empty).
+- **Alternatives:** One struct of all-optionals + a `kind` tag (rejected — illegal
+  states compile, View needs defensive nil-checks). A class hierarchy / protocol per
+  kind (rejected — heavier, fights value semantics and `Equatable` synthesis).
+
+## D10 — Degrade-vs-drop policy
+
+- **Context:** The factory must decide, per anomaly, whether to drop the whole field
+  or keep it with an adjustment. Too aggressive loses usable fields; too lenient
+  renders broken ones.
+- **Decision:** Drop only when the field is *unusable or ambiguous*; otherwise degrade
+  and keep rendering. Every drop/degrade emits a `FieldDiagnostic`.
+
+  | Condition | Action |
+  |-----------|--------|
+  | missing/empty `id`, or duplicate `id` | **drop** (D6, first-wins) |
+  | `type` missing or `.unknown` | **drop** |
+  | DROPDOWN with no valid options left | **drop** (nothing to pick) |
+  | TEXT `subtype` `.unknown` | **degrade → PLAIN** |
+  | DROPDOWN with some bad/duplicate options | keep good, **drop bad** |
+  | `default_values` referencing unknown option ids | **filter to valid** |
+  | single-select with multiple defaults | **keep first** by option order |
+  | `max_length <= 0` | **ignore constraint** |
+  | option missing `label` (but has `id`) | **label ← id** |
+  | bad theme hex | **per-channel fallback** (D11) |
+
+- **Why:** Maximizes how much of a partially-broken payload still renders, which is
+  the brief's core requirement ("drop the bad field, keep rendering the rest"), while
+  diagnostics keep every decision auditable (D7).
+- **Alternatives:** Drop on any anomaly (rejected — loses usable fields over cosmetic
+  issues). Never drop, always coerce (rejected — would render a dropdown with no
+  options or a field with no id, corrupting state).
+
+## D11 — Theme/hex resolution is headless (no SwiftUI)
+
+- **Context:** Theme parsing produces colors, which tempts an early dependency on
+  SwiftUI `Color`. But `Color` needs a UI context and isn't cleanly unit-testable for
+  channel values, and the brief wants bad hex to degrade gracefully.
+- **Decision:** Parse hex into `RGBAColor` (channels in `0...1`, **no** `import
+  SwiftUI`) with a failable `init?(hex:)`. `ResolvedTheme.resolve(_:)` applies
+  per-channel fallback to defaults. M4 wraps `RGBAColor` into a SwiftUI `Color`.
+- **Why:** Keeps all hex parsing/validation in the testable headless core (one bad
+  channel can't break the palette, and we can assert exact channel values in XCTest).
+  The SwiftUI dependency is pushed to the thin presentation edge.
+- **Alternatives:** Parse straight into `Color` (rejected — drags SwiftUI into the
+  logic layer and is hard to unit-test). Store raw hex strings and parse in the View
+  (rejected — scatters validation across the UI, exactly what the boundary avoids).
