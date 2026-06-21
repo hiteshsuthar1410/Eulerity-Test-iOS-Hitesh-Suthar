@@ -23,13 +23,7 @@ struct BundleFormProvider: FormProvider {
         self.bundle = bundle
     }
 
-    // FIXME: [isolation-deadlock] Awaiting this nonisolated async function from an
-    // XCTest async method hangs under SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated +
-    // the NonisolatedNonsendingByDefault upcoming feature. The two BundleFormProvider
-    // async tests are XCTSkip'd until resolved (PROGRESS.md Known issues, DECISIONS D8).
-    // Production code path (ViewModel on @MainActor, M3) is unaffected; this is a
-    // test-harness/concurrency-feature interaction to revisit.
-    func loadForm() async throws -> Data {
+    func loadForm() throws -> Data {
         guard let url = bundle.url(forResource: resourceName, withExtension: "json") else {
             throw LoadError.resourceNotFound(name: resourceName)
         }

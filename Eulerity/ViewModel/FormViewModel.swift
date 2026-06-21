@@ -29,13 +29,12 @@ final class FormViewModel: ObservableObject {
 
     // MARK: - Loading
 
-    /// Runtime entry point: fetch bytes, parse, apply. Thin and untested in M3 —
-    /// awaiting the nonisolated async `loadForm()` is the `isolation-deadlock` shape
-    /// (PROGRESS.md / D8), verified for real when the app runs in M7. Any failure
-    /// degrades to an empty form rather than crashing.
-    func load() async {
+    /// Runtime entry point: fetch bytes, parse, apply. Synchronous (the bundle read
+    /// is synchronous); becomes `async` only when a network provider lands (D5). Any
+    /// failure degrades to an empty form rather than crashing.
+    func load() {
         do {
-            let data = try await provider.loadForm()
+            let data = try provider.loadForm()
             switch FormParser.parse(data) {
             case .success(let schema):
                 apply(schema)

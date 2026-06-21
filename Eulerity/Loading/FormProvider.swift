@@ -9,10 +9,11 @@ import Foundation
 
 /// Supplies the raw form JSON bytes.
 ///
-/// `async throws` today even though the bundle read is synchronous, so swapping in
-/// a `URLSession`-backed provider later needs no change to call sites or the
-/// parse → map → validate pipeline (DECISIONS.md → D5). Decoding operates on bytes
-/// regardless of where they came from.
+/// Synchronous today — the bundle read is synchronous, so `async` was a premature
+/// abstraction (it bought nothing and interacted badly with the concurrency model).
+/// The **protocol** is the real swap point: a future `URLSession`-backed provider can
+/// reintroduce `async` then, changing only the provider and its call site; the
+/// parse → map → validate pipeline is untouched (DECISIONS.md → D5).
 protocol FormProvider {
-    func loadForm() async throws -> Data
+    func loadForm() throws -> Data
 }

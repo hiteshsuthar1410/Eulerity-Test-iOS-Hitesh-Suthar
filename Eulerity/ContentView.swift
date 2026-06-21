@@ -27,8 +27,8 @@ struct ContentView: View {
             }
         }
         .padding()
-        .task {
-            await viewModel.load()
+        .onAppear {
+            viewModel.load()
             print("✅ RUNTIME LOAD OK — \(viewModel.fields.count) fields; title=\(viewModel.title ?? "nil")")
         }
     }

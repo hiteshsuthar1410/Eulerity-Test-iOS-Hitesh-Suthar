@@ -77,13 +77,22 @@ Newest decisions are appended at the bottom.
 - **Context:** Form JSON loads from the app bundle today but must come from a server
   eventually.
 - **Decision:** Define a `FormProvider` protocol returning raw bytes
-  (`func loadForm() async throws -> Data`), with a `BundleFormProvider` today. The
+  (`func loadForm() throws -> Data`), with a `BundleFormProvider` today. The
   ViewModel depends on the protocol, not the bundle.
-- **Why:** Swapping to a `URLSession`-backed provider later is a one-line change with
+- **Why:** Swapping to a `URLSession`-backed provider later is a localized change with
   the decode/map/validate path completely untouched, because decoding operates on
   bytes regardless of source.
+- **Amended (2026-06-21):** `loadForm()` was originally `async throws`, anticipating a
+  network swap. That was a **premature abstraction** — the bundle read is synchronous,
+  so the `async` bought nothing today and interacted badly with
+  `NonisolatedNonsendingByDefault` (it deadlocked two XCTest async tests, the
+  `isolation-deadlock` issue). Made it synchronous; the **protocol** is the real swap
+  point — a network provider can reintroduce `async` then (changing only the provider
+  and its call site). The two tests now run green, unskipped.
 - **Alternatives:** Read the bundle directly in the ViewModel (rejected — couples the
-  core to the bundle and blocks the server migration the brief calls for).
+  core to the bundle and blocks the server migration the brief calls for). Keep
+  `async` now (rejected — see amendment: abstraction with no present benefit and a real
+  cost).
 
 ## D6 — Duplicate / missing `id`: first-wins, drop the rest
 
@@ -145,13 +154,12 @@ Newest decisions are appended at the bottom.
 - **Why:** The parsing/mapping core is pure, synchronous, thread-agnostic logic; it
   should not be main-actor-bound. Opting in to `@MainActor` only where UI state lives
   is the correct, conventional MVVM boundary and removes the `Codable` conflict.
-- **Known side effect (see PROGRESS.md → Known issues):** Under `nonisolated` +
-  the `NonisolatedNonsendingByDefault` upcoming feature, the two `BundleFormProvider`
-  **async** tests hang when awaiting the nonisolated async `loadForm()` (the 13
-  synchronous parsing tests are unaffected). They are `XCTSkip`'d with `// FIXME:
-  [isolation-deadlock]` markers. **Update (2026-06-21, M4 de-risk):** the production
-  runtime `load()` path was verified in the simulator and does **not** deadlock — so
-  this is a test-harness gap, not a product risk; the M7 runtime concern is retired.
+- **Known side effect — RESOLVED (2026-06-21):** Under `nonisolated` +
+  `NonisolatedNonsendingByDefault`, the two `BundleFormProvider` **async** tests hung
+  when awaiting the nonisolated async `loadForm()`. First de-risked by verifying the
+  runtime `load()` path in the simulator (no hang), then **fully resolved** by making
+  `loadForm()` synchronous (D5 amendment) — the `async` was premature. Both tests now
+  run green, unskipped; the FIXME markers are removed.
 - **Alternatives:** Keep `MainActor` default and mark value types `nonisolated`
   piecemeal (rejected — inverts the sensible default; every new DTO would need an
   annotation). Disable approachable concurrency entirely (rejected — heavier hammer
@@ -254,13 +262,17 @@ Newest decisions are appended at the bottom.
 - **Context:** `FormViewModel` is `@MainActor` (UI state). Its async `load()` awaits
   the nonisolated async `loadForm()` — the exact shape that deadlocks XCTest async
   tests (`isolation-deadlock`, D8). We still need the core fully unit-tested.
-- **Decision:** Split loading: `load() async` (thin runtime wrapper) calls the
+- **Decision:** Split loading: `load()` (thin runtime wrapper) calls the
   provider then delegates to **`apply(_ schema:)` — synchronous**. Tests are
-  `@MainActor` classes that drive `apply` + `save` synchronously, so no `await`
-  crosses an isolation boundary and the deadlock is sidestepped. `@MainActor` is
+  `@MainActor` classes that drive `apply` + `save` synchronously. `@MainActor` is
   applied *only* to `FormViewModel`, per D8.
-- **Why:** Keeps the tested core independent of the unresolved async issue; isolates
-  the risky async path to one thin, runtime-only method to verify in M7.
+- **Why:** Keeps the tested core decoupled from loading (tests feed a parsed schema
+  straight to `apply`, no bundle/network). `@MainActor` only on the VM keeps UI-thread
+  isolation narrow.
+- **Amended (2026-06-21):** the original motivation was also to keep tests off the
+  `async` deadlock path. With the loader now synchronous (D5 amendment), `load()` is no
+  longer `async` and the deadlock is gone — but the `apply`/`load` split stays because
+  it's the clean testability seam regardless.
 - **Alternatives:** Make the whole VM async-tested (rejected — would hit the deadlock).
   Load synchronously from the bundle (rejected — breaks the network-ready D5 seam).
 
