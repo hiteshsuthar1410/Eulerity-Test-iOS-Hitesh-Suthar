@@ -48,22 +48,43 @@ The unit/logic suite was written before any UI existed.
 
 ```mermaid
 flowchart TD
-    A["Bundle JSON bytes"] -->|FormProvider protocol\n(BundleFormProvider today,\nURLSession later)| B["Decode layer"]
+    A["Bundle JSON bytes"]
+    B["Decode layer"]
+
+    A -->|"FormProvider protocol<br/>BundleFormProvider today<br/>URLSession later"| B
 
     subgraph Boundary["Anti-corruption boundary (resilience lives here)"]
-        B --> C["FormSchemaDTO / FieldDTO\n(Codable — mechanical only)"]
-        C -->|"Net 1: FailableDecodable\nper-element try?"| C
-        C -->|"Net 2: FieldType.unknown\n(no throw on unknown type)"| C
-        C --> D["FieldFactory\n(semantic validation,\nnon-throwing)"]
-        D --> E["[RenderableField]\n+ [FieldDiagnostic]"]
+        C["FormSchemaDTO / FieldDTO<br/>Codable - mechanical only"]
+
+        C -->|"Net 1: FailableDecodable<br/>per-element try?"| C
+        C -->|"Net 2: FieldType.unknown<br/>no throw on unknown type"| C
+
+        D["FieldFactory<br/>semantic validation<br/>non-throwing"]
+        E["RenderableField<br/>plus FieldDiagnostic"]
+
+        B --> C
+        C --> D
+        D --> E
     end
 
-    E --> F["FormViewModel\n(ObservableObject)\nstate: [fieldID: FieldValue]\nerrors, theme, save()"]
-    F --> G["FormScreen"]
-    G --> H["Reusable components\nText / Dropdown / Toggle / Checkbox"]
-    F -.theme.-> I["Theme + Typography engines"]
+    F["FormViewModel<br/>ObservableObject<br/>state: fieldID → FieldValue<br/>errors, theme, save()"]
+
+    G["FormScreen"]
+
+    H["Reusable components<br/>Text / Dropdown / Toggle / Checkbox"]
+
+    I["Theme + Typography engines"]
+
+    J["Print final key-value pairs<br/>and confirm"]
+
+    E --> F
+    F --> G
+    G --> H
+
+    F -. theme .-> I
     I -.-> H
-    F -->|"valid Save"| J["Print final key-value pairs + confirm"]
+
+    F -->|"valid Save"| J
 ```
 
 The core idea is a **two-net decoding firewall**. The DTO layer is permissive and
