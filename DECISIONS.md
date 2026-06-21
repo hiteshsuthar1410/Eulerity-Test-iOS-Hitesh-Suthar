@@ -149,8 +149,9 @@ Newest decisions are appended at the bottom.
   the `NonisolatedNonsendingByDefault` upcoming feature, the two `BundleFormProvider`
   **async** tests hang when awaiting the nonisolated async `loadForm()` (the 13
   synchronous parsing tests are unaffected). They are `XCTSkip`'d with `// FIXME:
-  [isolation-deadlock]` markers pending a fix (candidates: annotate the provider/test
-  isolation, or revisit the upcoming-feature flag).
+  [isolation-deadlock]` markers. **Update (2026-06-21, M4 de-risk):** the production
+  runtime `load()` path was verified in the simulator and does **not** deadlock — so
+  this is a test-harness gap, not a product risk; the M7 runtime concern is retired.
 - **Alternatives:** Keep `MainActor` default and mark value types `nonisolated`
   piecemeal (rejected — inverts the sensible default; every new DTO would need an
   annotation). Disable approachable concurrency entirely (rejected — heavier hammer
