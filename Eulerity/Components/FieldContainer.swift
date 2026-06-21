@@ -19,15 +19,20 @@ struct FieldContainer<Content: View>: View {
     /// Current character count; when non-nil and the field has a `max_length`, the
     /// live counter is shown.
     let characterCount: Int?
+    /// When `false`, the top label is suppressed so the component can render the label
+    /// beside its control (toggle/checkbox). The footer is still shown.
+    let showsLabel: Bool
     let content: Content
 
     init(field: RenderableField,
          error: String? = nil,
          characterCount: Int? = nil,
+         showsLabel: Bool = true,
          @ViewBuilder content: () -> Content) {
         self.field = field
         self.error = error
         self.characterCount = characterCount
+        self.showsLabel = showsLabel
         self.content = content()
     }
 
@@ -41,7 +46,7 @@ struct FieldContainer<Content: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            if let label = field.label {
+            if showsLabel, let label = field.label {
                 labelView(label)
             }
             content

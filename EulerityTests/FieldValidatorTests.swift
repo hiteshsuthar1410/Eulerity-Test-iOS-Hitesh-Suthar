@@ -70,6 +70,14 @@ final class FieldValidatorTests: XCTestCase {
         XCTAssertNil(FieldValidator.validate(field, value: .text("-3.5")))
     }
 
+    func testNumberAcceptsDecimals() {
+        // .decimalPad lets users type fractional values — D15 parses as Double, not Int.
+        let field = textField(subtype: .number)
+        XCTAssertNil(FieldValidator.validate(field, value: .text("50.00")))
+        XCTAssertNil(FieldValidator.validate(field, value: .text("0.5")))
+        XCTAssertNil(FieldValidator.validate(field, value: .text(".25")))
+    }
+
     func testNumberRejectsJunk() {
         let field = textField(subtype: .number)
         XCTAssertNotNil(FieldValidator.validate(field, value: .text("50abc")))

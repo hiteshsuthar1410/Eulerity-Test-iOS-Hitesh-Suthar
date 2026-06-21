@@ -26,10 +26,17 @@ struct ContentView: View {
                     .foregroundColor(palette.text)
 
                 ForEach(viewModel.fields) { field in
-                    FieldContainer(field: field, error: viewModel.errors[field.id]) {
-                        placeholderBox(for: field)
-                    }
+                    fieldView(for: field)
                 }
+
+                Button("Save") { viewModel.save() }
+                    .font(Typography.button)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .foregroundColor(palette.background)
+                    .background(palette.text)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .padding(.top, 4)
             }
             .padding(20)
             .background(palette.background)           // branded surface (server colors)
@@ -46,19 +53,13 @@ struct ContentView: View {
     }
 
     @ViewBuilder
-    private func placeholderBox(for field: RenderableField) -> some View {
-        let text: String
+    private func fieldView(for field: RenderableField) -> some View {
         switch field.kind {
-        case .text(let model): text = model.placeholder ?? "—"
-        case .dropdown: text = "Select…"
-        case .toggle, .checkbox: text = "Off"
+        case .text: FormTextField(viewModel: viewModel, field: field)
+        case .dropdown: FormDropdownField(viewModel: viewModel, field: field)
+        case .toggle: FormToggleField(viewModel: viewModel, field: field)
+        case .checkbox: FormCheckboxField(viewModel: viewModel, field: field)
         }
-        return Text(text)
-            .font(Typography.input)
-            .foregroundColor(palette.text.opacity(0.7))
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(10)
-            .overlay(RoundedRectangle(cornerRadius: 8).stroke(palette.border))
     }
 }
 

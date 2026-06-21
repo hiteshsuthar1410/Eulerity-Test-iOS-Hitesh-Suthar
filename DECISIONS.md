@@ -356,3 +356,51 @@ Newest decisions are appended at the bottom.
   HIG-aligned layout and theming for free; only the interactive control differs.
 - **Alternatives:** Chrome per component (rejected — duplication, drift). A bag of
   view modifiers (rejected — less discoverable, harder to keep layout consistent).
+
+## D19 — Components take the view model + field (bind through the VM)
+
+- **Context:** Each component needs its value binding, its error, and (for text) its
+  character count. It could take raw `Binding`s, or the whole view model.
+- **Decision:** Components take `@ObservedObject viewModel: FormViewModel` + their
+  `RenderableField`, and pull the binding from `viewModel.textBinding(for:)` /
+  `boolBinding(for:)` and selection mutators. Previews build a real VM from a small
+  JSON fixture.
+- **Why:** The `max_length` truncation and error-clear-on-edit live in the VM's
+  mutators — routing through them keeps that behavior centralized; a raw `Binding`
+  would bypass it. The VM stays the single source of truth.
+- **Alternatives:** Pass raw `Binding<String>`/`Binding<Bool>` (rejected — loses
+  truncation/error-clear unless re-implemented per component). Abstract the VM behind a
+  protocol (rejected — over-abstraction for a single app; the `async` episode is the
+  cautionary tale).
+
+## D20 — Dropdown: Menu for single-select, sheet for multi-select
+
+- **Context:** Single- and multi-select need different idioms; both must show option
+  **labels** while tracking option **ids**.
+- **Decision:** Single-select → an HIG pull-down `Menu`. Multi-select → a checkmark
+  `List` in a `.sheet` (with `presentationDetents`), Done to dismiss. The collapsed row
+  shows the selected labels joined (or a placeholder). NUMBER's `.decimalPad` pairs with
+  the D15 `Double` numeric check so `"50.00"` is valid.
+- **Why:** The HIG-idiomatic split, and cheaper than the alternative: the multi-select
+  sheet must exist regardless, so making single-select a `Menu` is *less* work than a
+  unified sheet (a heavier single-select). A `Menu` can't cleanly hold multi-select on
+  iOS 16.
+- **Alternatives:** One unified sheet for both (rejected — heavier single-select for no
+  gain). A `Menu` of toggles for multi (rejected — dismisses on each tap, clunky).
+
+## D21 — Toggle/checkbox inline labels; control tint = text color; swappable checkbox label
+
+- **Context:** Toggles/checkboxes put their label beside the control, not on top. The
+  schema also has no dedicated accent channel, yet controls need an on/selected tint.
+  And the checkbox label must become rich text in M6.
+- **Decision:** `FieldContainer` gained `showsLabel` (D18); toggle/checkbox pass `false`
+  and render an inline label (with the required `*`), keeping the error/supporting
+  footer. Control tint uses `palette.text` (the strongest theme color) since there's no
+  accent channel. The checkbox's label is a separate subview, and only the box toggles
+  state — so M6 can swap in a rich-text label whose links receive taps without a
+  row-level tap stealing them.
+- **Why:** Matches platform conventions for switches/checkboxes; `palette.text` keeps the
+  tint theme-driven; the label/box separation is the seam M6 needs.
+- **Alternatives:** Keep the top label for toggle/checkbox too (rejected — lone control
+  under a label looks wrong). Hardcode a system accent for tint (rejected — ignores the
+  theme). Whole-row toggle (rejected — would conflict with M6's tappable label links).
