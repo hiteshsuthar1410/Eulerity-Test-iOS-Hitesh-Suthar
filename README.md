@@ -51,19 +51,24 @@ flowchart TD
     A["Bundle JSON bytes"]
     B["Decode layer"]
 
-    A -->|"FormProvider protocol<br/>BundleFormProvider today<br/>URLSession later"| B
+    A --> B
 
     subgraph Boundary["Anti-corruption boundary (resilience lives here)"]
+
         C["FormSchemaDTO / FieldDTO<br/>Codable - mechanical only"]
 
-        C -->|"Net 1: FailableDecodable<br/>per-element try?"| C
-        C -->|"Net 2: FieldType.unknown<br/>no throw on unknown type"| C
+        N1["Net 1<br/>FailableDecodable<br/>per-element try?"]
+
+        N2["Net 2<br/>FieldType.unknown<br/>no throw on unknown type"]
 
         D["FieldFactory<br/>semantic validation<br/>non-throwing"]
+
         E["RenderableField<br/>plus FieldDiagnostic"]
 
         B --> C
-        C --> D
+        C --> N1
+        N1 --> N2
+        N2 --> D
         D --> E
     end
 
@@ -71,7 +76,7 @@ flowchart TD
 
     G["FormScreen"]
 
-    H["Reusable components<br/>Text / Dropdown / Toggle / Checkbox"]
+    H["Reusable Components<br/>Text / Dropdown / Toggle / Checkbox"]
 
     I["Theme + Typography engines"]
 
