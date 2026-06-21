@@ -404,3 +404,31 @@ Newest decisions are appended at the bottom.
 - **Alternatives:** Keep the top label for toggle/checkbox too (rejected — lone control
   under a label looks wrong). Hardcode a system accent for tint (rejected — ignores the
   theme). Whole-row toggle (rejected — would conflict with M6's tappable label links).
+
+## D22 — Rich-text labels via one AttributedString Text; longest-first overlap guard
+
+- **Context:** Checkbox labels embed `metadata` substrings that must become tappable
+  links (→ Safari) styled in `clickable_text_color`. Multiple keys can overlap (e.g.
+  "Terms" inside "Terms of Service"), and URLs are server-supplied.
+- **Decision:** A pure builder `RichText.make(...)` produces a single `AttributedString`
+  (rendered by one `Text`): the label in `textColor`, each metadata substring as an
+  `http(s)` link in `linkColor` + underline, plus a trailing required `*`.
+  - **First occurrence** per key.
+  - **Longest-key-first, skip overlapping ranges** — keys are sorted by length
+    descending and any occurrence overlapping an already-linked range is skipped, so a
+    short key ("Terms") can't corrupt a longer link ("Terms of Service").
+  - **https-only:** a value links only if `URL(string:)` succeeds *and* its scheme is
+    `http`/`https`; otherwise it stays plain text (blocks `javascript:` / junk).
+  - **Color fallback:** `clickable_text_color` verbatim, else `Color(uiColor: .link)`
+    (adaptive), consistent with D17.
+  - **Open in Safari:** a `.link` tap uses SwiftUI's default `OpenURLAction` (external
+    Safari) — no `SFSafariViewController` (that would be in-app).
+  The builder is extracted from the View so all of this is unit-tested.
+- **Why:** One `Text`/`AttributedString` lets links flow inline with the label with no
+  overlay hacks; the box still owns the toggle (D21), only link runs are tappable. The
+  overlap guard prevents a subtle data-driven corruption; https-only is a sane posture
+  for server URLs.
+- **Alternatives:** Concatenate `Link`/`Button` segments (rejected — clumsy for inline
+  substrings, brittle wrapping). Link all occurrences (rejected — first-occurrence is
+  the agreed scope). Open in an in-app `SFSafariViewController` (rejected — brief says
+  Safari; can be added later behind the same tap).

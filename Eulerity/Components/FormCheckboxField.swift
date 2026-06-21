@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 /// Renders a `CHECKBOX`: a tappable box plus a label beside it (so `FieldContainer`
 /// suppresses its top label, D21). Only the box toggles state — the label is a
@@ -42,10 +43,27 @@ struct FormCheckboxField: View {
         }
     }
 
-    /// M6 replaces this with the rich-text (tappable metadata) label.
+    private var checkboxModel: RenderableField.Checkbox? {
+        if case .checkbox(let model) = field.kind { return model }
+        return nil
+    }
+
+    /// `clickable_text_color` verbatim when given, else the adaptive system link color
+    /// (consistent with D17).
+    private var linkColor: Color {
+        checkboxModel?.clickableColor.map { Color($0) } ?? Color(uiColor: .link)
+    }
+
+    /// Rich-text label: metadata substrings become tappable links to Safari (M6).
     private var label: some View {
-        inlineLabel(field, palette: palette)
-            .font(Typography.input)
+        RichTextLabel(
+            label: field.label ?? "",
+            links: checkboxModel?.metadata ?? [],
+            linkColor: linkColor,
+            textColor: palette.text,
+            required: field.isRequired,
+            requiredColor: palette.error
+        )
     }
 }
 
