@@ -4,8 +4,8 @@
 //
 //  M3 — state seeding, max_length truncation, error lifecycle, and the Save payload
 //  shape (D15: scalars for single values, arrays for multi-select). The test class is
-//  @MainActor so it drives the @MainActor view model synchronously — no `await`
-//  crosses an isolation boundary, sidestepping the isolation-deadlock FIXME.
+//  @MainActor simply because `FormViewModel` is @MainActor, so its methods are called
+//  directly (no `await` needed — the loader is synchronous, D5).
 //
 
 import XCTest

@@ -61,6 +61,7 @@ struct FormTextField: View {
         .foregroundColor(palette.text)
         .padding(10)
         .overlay(RoundedRectangle(cornerRadius: 8).stroke(borderColor, lineWidth: 1))
+        .accessibilityIdentifier(field.id)
     }
 
     private var placeholder: String { model?.placeholder ?? "" }

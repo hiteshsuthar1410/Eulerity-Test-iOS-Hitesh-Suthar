@@ -37,6 +37,7 @@ struct FormCheckboxField: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel(field.label ?? "Checkbox")
                 .accessibilityValue(isOn ? "Checked" : "Unchecked")
+                .accessibilityIdentifier("\(field.id)_checkbox")
 
                 label
             }

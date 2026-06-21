@@ -432,3 +432,27 @@ Newest decisions are appended at the bottom.
   substrings, brittle wrapping). Link all occurrences (rejected — first-occurrence is
   the agreed scope). Open in an in-app `SFSafariViewController` (rejected — brief says
   Safari; can be added later behind the same tap).
+
+## D23 — FormScreen: branded card on adaptive chrome, pinned Save, alert confirm, demo switch
+
+- **Context:** The final screen wires the engine together and must demonstrate the
+  brief's requirements: render the form, Save with validation + a confirmation, handle
+  an empty form, and (per request) show resilience *live* in the running app.
+- **Decision:** `FormScreen` is a `NavigationStack` with `form_title` as the large nav
+  title (system chrome → adaptive, D17) over the branded card (server colors). Save is
+  pinned via `.safeAreaInset(edge: .bottom)` so it clears the keyboard. Valid Save shows
+  an **alert** ("Submitted — N field(s) sent") in addition to the console payload; invalid
+  Save surfaces errors inline (no alert). Empty `fields` → a friendly empty state, never
+  a blank crash. Load is synchronous in `.onAppear` (once). A toolbar **demo switch**
+  (ladybug menu) reloads a bundled `form_edgecases.json` live so the hostile-payload
+  degradation is visible/recordable in-app; a `-edgecases` launch arg starts there
+  directly (for screenshots/CI). Dropped-field diagnostics stay `debugPrint`-only (D7) —
+  not user-facing noise.
+- **Why:** Matches HIG (large title, reachable primary action, system chrome adaptivity)
+  while keeping the server-themed surface intentional (D17). The demo switch satisfies
+  "resilience must be visible in the running app, not just a unit test," while
+  `ResilienceTests` keep the rigor.
+- **Alternatives:** Inline success banner instead of an alert (rejected — alert is the
+  clearest unambiguous "confirm"). A separate debug screen for edge cases (rejected — an
+  in-context switch better demonstrates the *same* engine handling both payloads). A
+  user-facing diagnostics panel (rejected — developer concern; debugPrint suffices).

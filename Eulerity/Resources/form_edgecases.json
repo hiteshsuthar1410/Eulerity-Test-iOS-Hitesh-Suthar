@@ -1,0 +1,66 @@
+{
+  "theme": {
+    "background_color": "#FFF7ED",
+    "text_color": "#7C2D12",
+    "border_color": "#FDBA74",
+    "error_color": "#GGGGGG"
+  },
+  "form_title": "Edge Cases (Hostile Payload)",
+  "fields": [
+    {
+      "id": "name",
+      "order": 1,
+      "type": "TEXT",
+      "subtype": "PLAIN",
+      "label": "Campaign Name",
+      "placeholder": "Required",
+      "max_length": 20,
+      "required": true,
+      "error_message": "Name is required."
+    },
+    "this element is not an object",
+    { "id": "future", "order": 2, "type": "DATE_PICKER", "label": "Launch Date (unknown type)" },
+    { "order": 3, "type": "TEXT", "label": "Field with no id" },
+    { "id": "name", "order": 4, "type": "TOGGLE", "label": "Duplicate id (dropped, first wins)" },
+    { "id": "empty_dd", "order": 5, "type": "DROPDOWN", "label": "Dropdown with no options" },
+    {
+      "id": "networks",
+      "order": 6,
+      "type": "DROPDOWN",
+      "allow_multiple": true,
+      "label": "Ad Networks",
+      "default_values": ["ghost", "net_meta"],
+      "options": [
+        { "id": "net_google", "label": "Google Search" },
+        { "label": "option missing id" },
+        { "id": "net_meta", "label": "Meta Platforms" }
+      ]
+    },
+    {
+      "id": "budget",
+      "order": "not-a-number",
+      "type": "TEXT",
+      "subtype": "NUMBER",
+      "label": "Daily Budget ($)",
+      "required": true
+    },
+    {
+      "id": "weird",
+      "order": 7,
+      "type": "TEXT",
+      "subtype": "HOLOGRAM",
+      "label": "Unknown subtype → degraded to plain",
+      "max_length": 0
+    },
+    {
+      "id": "legal",
+      "order": 8,
+      "type": "CHECKBOX",
+      "label": "I accept the Terms of Service.",
+      "required": true,
+      "metadata": { "Terms of Service": "https://example.com/terms" },
+      "clickable_text_color": "#GG00FF"
+    },
+    { "id": "notify", "order": 9, "type": "TOGGLE", "label": "Email me updates" }
+  ]
+}

@@ -64,7 +64,7 @@ as the first file in each lands.
 | ViewModel | `FormViewModel.swift`, `FieldValue.swift` (+ `FormOutputValue`/`SaveResult`) | M3 ✅ |
 | Typography | `Typography.swift` (single font engine) | M4 |
 | Components | `FieldContainer.swift` (M4 ✅), `FormTextField.swift`, `FormDropdownField.swift`, `FormToggleField.swift`, `FormCheckboxField.swift` (M5 ✅), `RichTextLabel.swift` (M6 ✅) | M4–M6 ✅ |
-| Screen | `FormScreen.swift` (replaces `ContentView`) | M7 |
+| Screen | `FormScreen.swift` (replaced `ContentView`); `form_edgecases.json` demo payload | M7 ✅ |
 
 ## State model
 

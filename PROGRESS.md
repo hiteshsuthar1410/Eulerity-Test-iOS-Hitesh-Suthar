@@ -12,7 +12,7 @@ Milestone tracker for the Server-Driven UI form engine. Logic milestones
 | M4 — Theme + Typography engines | ✅ Done | 2026-06-21 | `Typography` semantic-role font engine (D16), `FormPalette` verbatim/adaptive resolver + Environment (D17), `ResolvedTheme` → optional channels (D11 amended), `FieldContainer` chrome (D18). Dark/Light verified in simulator. 64 tests pass |
 | M5 — Reusable field components | ✅ Done | 2026-06-21 | `FormTextField` (5 subtypes, keyboards, live counter), `FormDropdownField` (Menu single / sheet multi, label-shown/id-tracked), `FormToggleField`, `FormCheckboxField` (swappable label for M6) — all via `FieldContainer`, bound to VM (D19/D20/D21). Light/Dark verified in simulator; 65 tests pass |
 | M6 — Rich-text checkbox labels | ✅ Done | 2026-06-21 | `RichTextLabel` + pure `RichText.make` builder: metadata substrings → tappable https-only links → Safari, `clickable_text_color` (adaptive fallback), longest-first overlap guard (D22). Wired into `FormCheckboxField`. Styled link verified in simulator; 72 tests pass |
-| M7 — Wire-up & polish | ⬜ Not started | — | `FormScreen`, Dark/Light + HIG pass, resilience hardening tests |
+| M7 — Wire-up & polish | ✅ Done | 2026-06-21 | `FormScreen` (nav title, branded card on adaptive chrome, pinned Save, success alert, empty state) replaces `ContentView`; in-app edge-cases demo switch + `form_edgecases.json` (D23); `ResilienceTests` (hostile payload end-to-end). 78 unit tests pass; 2 XCUITests (Save→error, Save→confirm) pass; Light/Dark + hostile payload verified in simulator |
 
 Status legend: ⬜ Not started · 🔄 In progress · ✅ Done
 

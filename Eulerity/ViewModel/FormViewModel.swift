@@ -32,9 +32,13 @@ final class FormViewModel: ObservableObject {
     /// Runtime entry point: fetch bytes, parse, apply. Synchronous (the bundle read
     /// is synchronous); becomes `async` only when a network provider lands (D5). Any
     /// failure degrades to an empty form rather than crashing.
-    func load() {
+    ///
+    /// `source` defaults to the injected provider; pass an explicit one to load a
+    /// different payload at runtime (used by the in-app edge-cases demo switch, M7).
+    func load(using source: FormProvider? = nil) {
+        let source = source ?? provider
         do {
-            let data = try provider.loadForm()
+            let data = try source.loadForm()
             switch FormParser.parse(data) {
             case .success(let schema):
                 apply(schema)
